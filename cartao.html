@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartão digital · Prisma Contabilidade</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+<div class="selo-demo">Amostra de demonstração · novapicks · <a href="index.html">página de captação</a></div>
+<main>
+  <article class="cartao-digital" id="cd"></article>
+  <div class="container nao-imprimir" style="max-width:560px;padding-bottom:var(--e6)">
+    <label for="base">Endereço da página de captação (vai no QR do cartão)</label><input type="text" id="base" inputmode="url">
+    <p class="nota">Imprima o cartão com o QR em cartão de visita, adesivo de carro e vitrine. Quem aponta a câmera cai direto na página.</p>
+    <button class="btn btn-azul" id="imprimir" type="button">Imprimir cartão</button>
+  </div>
+</main>
+<script src="vendor/qrcode.js"></script>
+<script src="js/dados.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = window.PROFISSIONAL, $ = function (s) { return document.querySelector(s); };
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  var base = $("#base"); base.value = location.href.replace(/cartao\.html.*$/, "index.html");
+  function vcf() {
+    return ["BEGIN:VCARD", "VERSION:3.0", "FN:" + P.nome, "ORG:" + P.marca, "TITLE:" + P.cargo, "TEL;TYPE=CELL:+" + P.whatsapp, "EMAIL:" + P.email, "URL:" + base.value, "NOTE:" + P.registro, "END:VCARD"].join("\r\n");
+  }
+  function desenhar() {
+    var q = qrcode(0, "M"); q.addData(base.value || "https://"); q.make();
+    var ini = P.nome.split(" ").map(function (x) { return x.charAt(0); }).slice(0, 2).join("");
+    $("#cd").innerHTML = '<div class="cd-topo"><b style="font-size:1.1rem;color:#fff">' + esc(P.marca) + '</b></div><div class="cd-avatar" aria-hidden="true">' + esc(ini) + '</div><div class="cd-corpo"><h1>' + esc(P.nome) + "</h1><p>" + esc(P.cargo) + " · " + esc(P.registro) + "</p><p>" + esc(P.cidade) + '</p><div class="cd-botoes">' +
+      '<a class="btn btn-menta" target="_blank" rel="noopener" href="https://wa.me/' + P.whatsapp + "?text=" + encodeURIComponent("Olá, " + P.nome.split(" ")[0] + "! Vi o seu cartão digital.") + '">Chamar no WhatsApp</a>' +
+      '<a class="btn btn-azul" href="' + esc(base.value) + '">Ver serviços e planos</a><a class="btn btn-contorno" href="mailto:' + esc(P.email) + '">Enviar e-mail</a><button class="btn btn-contorno" id="salvar" type="button">Salvar contato no celular</button></div>' +
+      '<div class="qrbox">' + q.createSvgTag({ cellSize: 4, margin: 1, scalable: true }).replace("<svg", '<svg role="img" aria-label="QR code da página de captação"') + '</div><p class="nota">Aponte a câmera para abrir a página.</p></div>';
+    $("#salvar").addEventListener("click", function () {
+      var u = URL.createObjectURL(new Blob([vcf()], { type: "text/vcard" })), a = document.createElement("a");
+      a.href = u; a.download = P.nome.toLowerCase().replace(/\s+/g, "-") + ".vcf"; a.click(); setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+    });
+  }
+  base.addEventListener("input", desenhar); $("#imprimir").addEventListener("click", function () { window.print(); });
+  desenhar();
+})();
+</script>
+</body>
+</html>
